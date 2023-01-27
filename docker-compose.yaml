@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.7'
 networks:
   caddy:
 services:
@@ -36,6 +36,8 @@ services:
   rocketchat:
     container_name: rocketchat
     image: rocket.chat:latest
+    networks:
+      - caddy
     restart: unless-stopped
     environment:
      - PORT=3000
@@ -58,6 +60,8 @@ services:
   # it will run the command and remove himself (it will not stay running)
   mongo-init-replica:
     image: mongo:latest
+    networks:
+      - caddy
     command: >
       bash -c
         "for i in `seq 1 30`; do
