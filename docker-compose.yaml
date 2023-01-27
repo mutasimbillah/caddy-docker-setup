@@ -2,20 +2,36 @@ version: '3.3'
 networks:
   caddy:
 services:
-  portainer:
-    image: portainer/portainer-ce:latest
-    container_name: portainer
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /home/admin/containers/portainer/portainer-data:/data
+  nocodb: 
+    depends_on: 
+      root_db: 
+        condition: service_healthy
+    environment: 
+      NC_DB: "pg://root_db:5432?u=postgres&p=password&d=root_db"
+    image: "nocodb/nocodb:latest"
+    ports: 
+      - "8080:8080"
+    restart: always
+    volumes: 
+      - "nc_data:/usr/app/data"
     networks:
       - caddy
-    ports:
-      - 9000:9000
+  root_db: 
+    environment: 
+      POSTGRES_DB: root_db
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: postgres
+    healthcheck: 
+      interval: 10s
+      retries: 10
+      test: "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""
+      timeout: 2s
+    image: postgres
+    restart: always
+    volumes: 
+      - "db_data:/var/lib/postgresql/data"
+    networks:
+      - caddy
       
   caddy:
     image: caddy:latest
@@ -35,3 +51,5 @@ volumes:
   caddy_data:
     external: true
   caddy_config:
+  db_data: {}
+  nc_data: {}
